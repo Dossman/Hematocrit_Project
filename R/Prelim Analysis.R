@@ -10,6 +10,7 @@ hem <- read.csv("./data/Hematocrit_Tonra.csv")
 ## Libraries
 library(tidyverse)
 library(lmodel2)
+library(changepoints)
 
 ####################################################################################################
 # Calculating Peig and Green (2009) condition indice for each bird
@@ -106,14 +107,26 @@ final$forage.guild <- ifelse(final$species %in% c("AMRE","BAWW"), "non-ground", 
 
 ### Plotting relationships between variables of
 
-summary(lm(hematocrit~bs14+species, data=final))
+ggplot(data = final, aes(x = juldate, y = hematocrit, colour=species)) + geom_point() + facet_wrap(~species) + stat_smooth()
+
+amre <- final %>% filter(species=="AMRE", YEAR==2010, is.na(hematocrit)==F) %>% arrange((juldate)) %>% group_by(juldate) %>% summarise(mean = mean(hematocrit))
+
+x <- amre$mean
+
+ansmean=cpt.mean(x)
+
+plot(ansmean)
+
+print(ansmeanvar)
 
 
+data(discoveries)
+dis.pelt=cpt.meanvar(x,test.stat="Normal", method="AMOC")
+plot(dis.pelt,cpt.width=3)
+cpts.ts(dis.pelt)
+
+plot(nhtemp, lag(nhtemp, 1), cex = .8, col = "blue",main = "Lag plot of New Haven temperatures")
 
 
-
-
-
-
-
-
+require("xts")
+x <- xts(amre$hematocrit, order.by=as.POSIXct(amre$CAPDATE, format="%m/%d/%y"))
